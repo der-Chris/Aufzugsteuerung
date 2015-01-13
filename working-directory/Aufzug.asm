@@ -39,6 +39,7 @@ call timer
 reti
 
 ;initialize interrupts
+init_interrupts:
 MOV TMOD, 00010001b ;Timer1: Gate1=0, C/T1 = 0, Mode1 = 01; Timer0: Gate0=0, C/T0 = 0, Mode0 = 01;
 MOV TCON, 01010000b ; Timer1: TF1=0, TR1(enables Timer1)=1; Timer0: TF0=0, TR0(enables Timer0)=1;
 ; EA(global Interrupt Enabled) = 1, X = dont care, ET2=0, ES(enables serial interrupt)=0, 
