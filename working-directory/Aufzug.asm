@@ -38,7 +38,16 @@ ORG 0bh
 call timer
 reti
 
+;initialize interrupts
+MOV TMOD, 00010001b ;Timer1: Gate1=0, C/T1 = 0, Mode1 = 01; Timer0: Gate0=0, C/T0 = 0, Mode0 = 01;
+MOV TCON, 01010000b ; Timer1: TF1=0, TR1(enables Timer1)=1; Timer0: TF0=0, TR0(enables Timer0)=1;
+; EA(global Interrupt Enabled) = 1, X = dont care, ET2=0, ES(enables serial interrupt)=0, 
+; ET1(enables timer interrupt1)=1, EX1(enables External Interrupt1)=0,ET0(enables timer interrupt0)=1, EX0(enables External Interrupt0)=0,
+MOV IE, 10001010b ; interrupt Priority is correct
+
+
 ;init
+; dont know whats done here anymore
 ORG 20h
 init:
 mov P1, #00h
