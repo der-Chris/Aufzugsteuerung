@@ -69,9 +69,9 @@ RET
 
 ;initializes the parameters
 init:
-MOV P1, #00h ;turn off buttons
-MOV P2, #0ffh ; turn off Engines -> Engines are low active
-MOV P3, #0ffh ;turn off Display -> Display is low active
+MOV P1, #00h ; turn off Engines -> Engines are low active
+MOV P3, #0ffh ; MOV P3, #0ffh ;turn off Display -> Display is low active
+CALL initialCheckFloor
 end
 
 timer0:
@@ -90,4 +90,67 @@ RET
 
 ext1:
 ; do something usefull
+RET
+
+;check in which floor the elevator is
+initialCheckFloor:
+JB P2.5, firstFloor
+JB P2.6, secondFloor
+JB P2.7, thirdFloor
+; when we don’t know in which floor the elevator is, we wait for a button to be pressed
+; when a button is pressed we close the door and drive to the firstFloor
+waitForButton:
+; check if a button is pressed
+MOV A, 00111111b
+ANL A, P0
+JZ waitForButton ;jumps if Accu equals 0
+checkDoors:
+JB P2.1, driveDown
+JNB P2.2, openDoors
+JNB P2.3, openDoors
+;closeDoor Routine
+MOV A, 11111100
+ANL A, P1
+MOV P1, A
+SETB P1.1
+JMP checkDoors
+
+;openDoor Routine
+openDoors:
+MOV A, 11111100
+ANL A, P1
+MOV P1, A
+SETB P1.0
+JMP checkDoors
+
+driveDown:
+MOV P1, 00001000b
+JNB driveDown
+LCALL showFirstFloor
+RET
+
+;if elevator in firstFloor
+firstFloor:
+
+JMP checkFloor
+
+secondFloor:
+
+JMP checkFloor
+
+thirdFloor:
+
+JMP checkFloor
+
+
+showFirstFloor:
+MOV P3, 11111001b ;Activate LED´s for first Floor
+RET
+
+showSecondFloor:
+MOV P3, 10100100b ;Activate LED´s for second Floor
+RET
+
+showThirdFloor:
+MOV P3, 10110000b ;Activate LED´s for third Floor
 RET
