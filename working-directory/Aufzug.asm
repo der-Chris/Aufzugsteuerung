@@ -72,6 +72,7 @@ init:
 MOV P1, #00h ; turn off Engines -> Engines are low active
 MOV P3, #0ffh ; MOV P3, #0ffh ;turn off Display -> Display is low active
 CALL initialCheckFloor
+CALL checkFloor
 end
 
 timer0:
@@ -127,7 +128,17 @@ driveDown:
 MOV P1, 00001000b
 JNB driveDown
 LCALL showFirstFloor
+; ret returns to init
 RET
+
+
+; checks in which floor the Elevator is
+checkFloor:
+JB P2.5, firstFloor
+JB P2.6, secondFloor
+JB P2.7, thirdFloor
+JMP checkFloor
+
 
 ;if elevator in firstFloor
 firstFloor:
@@ -143,6 +154,11 @@ thirdFloor:
 JMP checkFloor
 
 
+floorLogic:
+; implement floorLogic
+RET
+
+
 showFirstFloor:
 MOV P3, 11111001b ;Activate LED´s for first Floor
 RET
@@ -154,3 +170,5 @@ RET
 showThirdFloor:
 MOV P3, 10110000b ;Activate LED´s for third Floor
 RET
+
+END
