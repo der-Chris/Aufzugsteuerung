@@ -35,7 +35,7 @@
 ; R0	Button 0 has been pressed
 ; R1	Button 1 has been pressed
 ; R2	Button 2 has been pressed
-; R8	Direction the Elevator is headding. R8 = 0 -> up, R8 = 1 -> down
+; R7	Direction the Elevator is headding. R7 = 0 -> up, R7 = 1 -> down
 
 
 CSEG AT 100H
@@ -235,40 +235,54 @@ JMP checkFloor
 
 MOV A, R1
 JNZ goToSecondFloor ; if secondFloor is pressed, go there
-JMP checkFloor
+
+
 
 secondFloor:
 LCALL showSecondFloor
 CLR R1
-JMP checkFloor
+
 
 
 thirdFloor:
 LCALL showThirdFloor
 CLR R2
 
-JMP checkFloor
 
 
 floorLogic:
 ; implement floorLogic
 RET
 
-
-
-
+; Routine to Travel to FirstFloor
 goToFirstFloor:
-
+CLR P1.2
+SETB P1.3
+JNB P2.4, goToFirstFloor
 JMP firstFloor
 
-
+; Routine to Travel to SecondFloor
 goToSecondFloor:
-
+JB P0.4, firstFloorToSecondFloor
+JB P2.6, thirdFloorToSecondFloor
+; Elevator has to be in one Floor
+firstFloorToSecondFloor:
+CLR P1.3
+SETB P1.2
+JNB P2.5, goToFirstFloor
+JMP secondFloor
+thirdFloorToSecondFloor:
+CLR P1.2
+SETB P1.3
+JNB P2.5, goToFirstFloor
 JMP secondFloor
 
 
+; Routine to Travel to ThirdFloor
 goToThirdFloor:
-
+CLR P1.3
+SETB P1.2
+JNB P2.6, goToFirstFloor
 JMP thirdFloor
 
 closeDoors:
@@ -284,5 +298,24 @@ MOV A, IE
 ANL A, 11111101b
 MOV IE, A ; Activate interrupt to Check DoorSensors 
 RET
+
+
+goingDown:
+MOV A,R1
+JNZ goToSecondFloor
+MOV A, R0
+JNZ goToFirstFloor
+; if no button is pressed, check if button is pressed to drive up
+JMP goingUP
+
+
+goingUp:
+MOV A,R1
+JNZ goToSecondFloor
+MOV A, R2
+JNZ goToThirdFloor
+; if no button is pressed, check if button is pressed to drive down
+JMP goingDown
+
 
 END
