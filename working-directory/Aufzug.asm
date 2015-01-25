@@ -184,35 +184,29 @@ waitForButton:
 MOV A, P0
 ANL A, 00111111b 
 JZ waitForButton ;jumps if Accu equals 0
-checkDoors:
-JB P2.0, closeDoors
-JB P2.1, driveDown
 
-JNB P2.2, openDoors
-JNB P2.3, openDoors
-;closeDoor Routine
-MOV A, 11111100b
-ANL A, P1
-MOV P1, A
-SETB P1.1
+; dont check if closed or so, just to it
+LCALL closeDoors
+LCALL driveDown
+LCALL openDoors
 endInit:
-JMP checkDoors
 RET
 
 
 ;openDoor Routine
 openDoors:
-MOV A, 11111100b
-ANL A, P1
-MOV P1, A
+CLR P1.1
 SETB P1.0
-JMP checkDoors
+JNB P2.0, openDoors
+CLR P1.0
+RET
 
 
+;drive Down, till in first Floor
 driveDown:
-MOV P1, 00001000b
+SETB P1.3
 JNB P2.4, driveDown
-; ret returns to init
+CLR P1.3
 RET
 
 
@@ -253,6 +247,7 @@ CLR R2
 floorLogic:
 ; implement floorLogic
 RET
+
 
 ; Routine to Travel to FirstFloor
 goToFirstFloor:
