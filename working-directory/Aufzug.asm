@@ -97,12 +97,45 @@ end
 timer0:
 MOV A, P3
 ANL A, 00001100b ; If P3.2 or P3.3 is triggered, then Accu != 0
-AZ initTimer0 ; And if Accu = 0, countinue
+AZ checkDoorButtons ; And if Accu = 0, countinue
 CLR P1.0
 SETB P1.1 ; stop doors from closing, open doors
-MOV 1, P2
+MOV A, P2
 ANL A, 00000001b
 JZ timer0 ; when doors are not closed, wait till they are
+; If sensors are not triggered, check if a button from floor the elevator is in, is pressed
+checkDoorButtons:
+JB P2.4, checkFirstFloorDoors
+JB P2.5, checkSecondFloorDoors
+JB P2.6, checkThirdFloorDoors
+; Elevator has to be in one Floor
+checkFirstFloorDoors:
+MOV A, P0
+ANL A, 00001001b
+JZ initTimer0
+closeDoorsFirstFloor:
+MOV A, P2
+ANL A, 00000001b
+JZ closeDoorsFirstFloor ; when doors are not closed, wait till they are
+JMP initTimer0
+checkSecondFloorDoors:
+MOV A, P0
+ANL A, 00010010b
+JZ initTimer0
+closeDoorsSecondFloor:
+MOV A, P2
+ANL A, 00000001b
+JZ closeDoorsSecondFloor ; when doors are not closed, wait till they are
+JMP initTimer0
+checkThirdFloorDoors:
+MOV A, P0
+ANL A, 00100100b
+JZ initTimer0
+closeDoorsThirdFloor:
+MOV A, P2
+ANL A, 00000001b
+JZ closeDoorsThirdFloor ; when doors are not closed, wait till they are
+JMP initTimer0
 ; in the end, Timer 0 has to be reinitialized
 initTimer0
 MOV TL0, 0F9h ; 249 in Low von Timer0
@@ -222,19 +255,6 @@ floorLogic:
 RET
 
 
-showFirstFloor:
-MOV P3, 11111001b ;Activate LED´s for first Floor
-RET
-
-
-showSecondFloor:
-MOV P3, 10100100b ;Activate LED´s for second Floor
-RET
-
-
-showThirdFloor:
-MOV P3, 10110000b ;Activate LED´s for third Floor
-RET
 
 
 goToFirstFloor:
