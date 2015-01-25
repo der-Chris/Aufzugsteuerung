@@ -218,35 +218,11 @@ JB P2.7, thirdFloor
 JMP checkFloor
 
 
-;if elevator in firstFloor
-firstFloor:
-LCALL showFirstFloor
-CLR R0
-
-MOV A, R1
-JNZ goToSecondFloor ; if secondFloor is pressed, go there
-JMP checkFloor
-
-MOV A, R1
-JNZ goToSecondFloor ; if secondFloor is pressed, go there
-
-
-
-secondFloor:
-LCALL showSecondFloor
-CLR R1
-
-
-
-thirdFloor:
-LCALL showThirdFloor
-CLR R2
-
-
-
 floorLogic:
 ; implement floorLogic
-RET
+
+
+JMP checkFloor
 
 
 ; Routine to Travel to FirstFloor
@@ -254,7 +230,9 @@ goToFirstFloor:
 CLR P1.2
 SETB P1.3
 JNB P2.4, goToFirstFloor
-JMP firstFloor
+CLR P1.3
+LCALL showFirstFloor
+JMP floorLogic
 
 ; Routine to Travel to SecondFloor
 goToSecondFloor:
@@ -265,11 +243,15 @@ firstFloorToSecondFloor:
 CLR P1.3
 SETB P1.2
 JNB P2.5, goToFirstFloor
-JMP secondFloor
+CLR P1.2
+LCALL showSecondFloor
+JMP floorLogic
 thirdFloorToSecondFloor:
 CLR P1.2
 SETB P1.3
 JNB P2.5, goToFirstFloor
+CLR P1.3
+LCALL showSecondFloor
 JMP secondFloor
 
 
@@ -278,8 +260,12 @@ goToThirdFloor:
 CLR P1.3
 SETB P1.2
 JNB P2.6, goToFirstFloor
+CLR P1.2
+LCALL showThirdFloor
 JMP thirdFloor
 
+
+; Routine to Close the Doors
 closeDoors:
 JB P2.1, dooresClosed
 MOV A, IE
