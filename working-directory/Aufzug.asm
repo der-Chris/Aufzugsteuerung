@@ -38,7 +38,7 @@
 ; R7	Direction the Elevator is headding. R7 = 0 -> up, R7 = 1 -> down
 
 
-CSEG AT 100H
+CSEG AT 0100H
 LJMP init_interrupts
 
 
@@ -81,8 +81,8 @@ RET
 
 ;initializes the parameters
 init:
-MOV P1, #00h ; turn off Engines -> Engines are low active
-MOV P3, #0ffh ; MOV P3, #0ffh ;turn off Display -> Display is low active
+MOV P1, 00h ; turn off Engines -> Engines are low active
+MOV P3, 0ffh ; MOV P3, #0ffh ;turn off Display -> Display is low active
 
 CLR R0 ; R0 = 1, if Button for First Floor has been pressed
 CLR R1 ; R1 = 1, if Button for Second Floor has been pressed
@@ -90,7 +90,8 @@ CLR R2 ; R2 = 1, if Button for Third Floor has been pressed
 
 CALL initialCheckFloor
 CALL checkFloor
-end
+
+END
 
 
 ; Check sensors, if sensors are triggered Or OpenDoor or SameFloor Buttons are pressed,open the doors
@@ -220,9 +221,14 @@ JMP checkFloor
 
 floorLogic:
 ; implement floorLogic
-
-
-JMP checkFloor
+CALL openDoors
+; here could be a timer
+CALL closeDoors
+; Check if we are on top or at the bottom. If we are at the button, first try getting up.
+CJNE R0, 00h, goingUp
+CJNE R2, 00h, goingDown
+CJNE R7, 00h, goingDown
+JMP goingUp
 
 
 ; Routine to Travel to FirstFloor
@@ -282,6 +288,7 @@ RET
 
 
 goingDown:
+MOV R7, 01h
 MOV A,R1
 JNZ goToSecondFloor
 MOV A, R0
@@ -291,6 +298,7 @@ JMP goingUP
 
 
 goingUp:
+MOV R7, 00h
 MOV A,R1
 JNZ goToSecondFloor
 MOV A, R2
