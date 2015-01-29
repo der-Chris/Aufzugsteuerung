@@ -75,7 +75,6 @@ MOV TL0, #0F9h ; 249 in Low von Timer0
 MOV TH0, #09h ; 9 in High von Timer0
 MOV TL1, #0F9h ; 249 in Low von Timer1
 MOV TH1, #03h ; 19 in High von Timer1
-RET
 
 
 ;initializes the parameters
