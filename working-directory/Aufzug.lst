@@ -38,308 +38,284 @@ Aufzug                                                                          
                         37     ; R2    Button 2 has been pressed
                         38     ; R7    Direction the Elevator is headding. R7 = 0 -> up, R7 = 1 -> down
                         39     CSEG AT 00H
-                        40     LJMP init_interrupts
+0000 020100             40     LJMP init_interrupts
                         41
                         42     ; Interrupt Address for ExternalInterrupt0 -> Emergency Button
                         43     ORG 03h
-                        44     LCALL ext0
-                        45     RETI
+0003 120128             44     LCALL ext0
+0006 32                 45     RETI
                         46
                         47
                         48     ; Interrupt Address for Timer0
                         49     ; This Interrupt checks every 5ms if the Sensors are triggered
                         50     ORG 0bh
-                        51     LCALL timer0_ISR
-                        52     RETI
+000B 12012C             51     LCALL timer0_ISR
+000E 32                 52     RETI
                         53
                         54
                         55     ; Interrupt Address for Timer1
                         56     ; This Interrupt checks every 10ms if a Button has been pressed
                         57     ORG 01bh
-                        58     LCALL timer1_ISR
-                        59     RETI
+001B 120179             58     LCALL timer1_ISR
+001E 32                 59     RETI
                         60
                         61     CSEG AT 0100H
                         62     ;initialize interrupts
                         63     init_interrupts:
-                        64     MOV TMOD, 00010001b
+0100 851189             64     MOV TMOD, 00010001b
                         65     ;Timer1: Gate1=0, C/T1 = 0, Mode1 = 01 ; Timer0: Gate0=0, C/T0 = 0, Mode0 = 01
-                        66     MOV TCON, 01010000b
+0103 855088             66     MOV TCON, 01010000b
                         67     ; Timer1: TF1=0, TR1(enables Timer1)=1; Timer0: TF0=0, TR0(enables Timer0)=1
                         68
                         69     ; EA(global Interrupt Enabled) = 1, X = dont care, X = dont care, ES(enables serial interrupt)=0,
                         70     ; ET1(enables timer interrupt1)=1, EX1(enables External Interrupt1)=0,ET0(enables timer interrupt0)=0
                         71     ; Enable Timer0 Interrupts just if it is needed
-                        72     MOV IE, 10001001b
+0106 8589A8             72     MOV IE, 10001001b
                         73     ; interrupt Priority is correct
-                        74     MOV TL0, 0F9h ; 249 in Low von Timer0
-                        75     MOV TH0, 09h ; 9 in High von Timer0
-                        76     MOV TL1, 0F9h ; 249 in Low von Timer1
-                        77     MOV TH1, 03h ; 19 in High von Timer1
-                        78     RET
+0109 85F98A             74     MOV TL0, 0F9h ; 249 in Low von Timer0
+010C 85098C             75     MOV TH0, 09h ; 9 in High von Timer0
+010F 85F98B             76     MOV TL1, 0F9h ; 249 in Low von Timer1
+0112 85038D             77     MOV TH1, 03h ; 19 in High von Timer1
+0115 22                 78     RET
                         79
                         80
                         81     ;initializes the parameters
                         82     init:
-                        83     MOV P1, 00h ; turn off Engines -> Engines are low active
-                        84     MOV P3, 0ffh ; MOV P3, #0ffh ;turn off Display -> Display is low active
+0116 850090             83     MOV P1, 00h ; turn off Engines -> Engines are low active
+0119 85FFB0             84     MOV P3, 0ffh ; MOV P3, #0ffh ;turn off Display -> Display is low active
                         85
-                        86     MOV R0, 00h ; R0 = 1, if Button for First Floor has been pressed
-                        87     MOV R1, 00h ; R1 = 1, if Button for Second Floor has been pressed
-                        88     MOV R2, 00h ; R2 = 1, if Button for Third Floor has been pressed
+011C A800               86     MOV R0, 00h ; R0 = 1, if Button for First Floor has been pressed
+011E A900               87     MOV R1, 00h ; R1 = 1, if Button for Second Floor has been pressed
+0120 AA00               88     MOV R2, 00h ; R2 = 1, if Button for Third Floor has been pressed
                         89
-                        90     LCALL initialCheckFloor
-                        91     JMP checkFloor
+0122 120198             90     LCALL initialCheckFloor
+0125 020229             91     JMP goingDown
                         92
                         93
                         94
                         95     ; do something usefull
                         96     ext0:
-                        97     MOV P3, 10000110b ;Activate LED´s for Error
-                        98     RET
+0128 8586B0             97     MOV P3, 10000110b ;Activate LED´s for Error
+012B 22                 98     RET
                         99
                        100
                        101     ; Check sensors, if sensors are triggered Or OpenDoor or SameFloor Buttons are pressed,open the doors
                        102     timer0_ISR:
-                       103     MOV A, P3
-                       104     ANL A, 00001100b ; If P3.2 or P3.3 is triggered, then Accu != 0
-                       105     JZ checkDoorButtons ; And if Accu = 0, countinue
-                       106     CLR P1.0
-                       107     SETB P1.1 ; stop doors from closing, open doors
-                       108     MOV A, P2
-                       109     ANL A, 00000001b
-                       110     JZ timer0 ; when doors are not closed, wait till they are
-****ERROR:Labelistoofarfor8-bitrelativeaddressing.Trytodisablepeepholeoptimizationsiftheyareon.
+012C E5B0              103     MOV A, P3
+012E 550C              104     ANL A, 00001100b ; If P3.2 or P3.3 is triggered, then Accu != 0
+0130 600A              105     JZ checkDoorButtons ; And if Accu = 0, countinue
+0132 C290              106     CLR P1.0
+0134 D291              107     SETB P1.1 ; stop doors from closing, open doors
+0136 E5A0              108     MOV A, P2
+0138 5501              109     ANL A, 00000001b
+013A 60F0              110     JZ timer0_ISR ; when doors are not closed, wait till they are
                        111     ; If sensors are not triggered, check if a button from floor the elevator is in, is pressed
                        112     checkDoorButtons:
-                       113     JB P2.4, checkFirstFloorDoors
-                       114     JB P2.5, checkSecondFloorDoors
-                       115     JB P2.6, checkThirdFloorDoors
+013C 20A406            113     JB P2.4, checkFirstFloorDoors
+013F 20A512            114     JB P2.5, checkSecondFloorDoors
+0142 20A61E            115     JB P2.6, checkThirdFloorDoors
                        116     ; Elevator has to be in one Floor
                        117     checkFirstFloorDoors:
-                       118     MOV A, P0
-                       119     ANL A, 00001001b
-                       120     JZ initTimer0
+0145 E580              118     MOV A, P0
+0147 5509              119     ANL A, 00001001b
+0149 6027              120     JZ initTimer0
                        121     closeDoorsFirstFloor:
-                       122     MOV A, P2
-                       123     ANL A, 00000001b
-                       124     JZ closeDoorsFirstFloor ; when doors are not closed, wait till they are
-                       125     JMP initTimer0
+014B E5A0              122     MOV A, P2
+014D 5501              123     ANL A, 00000001b
+014F 60FA              124     JZ closeDoorsFirstFloor ; when doors are not closed, wait till they are
+0151 020172            125     JMP initTimer0
                        126     checkSecondFloorDoors:
-                       127     MOV A, P0
-                       128     ANL A, 00010010b
-                       129     JZ initTimer0
+0154 E580              127     MOV A, P0
+0156 5512              128     ANL A, 00010010b
+0158 6018              129     JZ initTimer0
                        130     closeDoorsSecondFloor:
-                       131     MOV A, P2
-                       132     ANL A, 00000001b
-                       133     JZ closeDoorsSecondFloor ; when doors are not closed, wait till they are
-                       134     JMP initTimer0
+015A E5A0              131     MOV A, P2
+015C 5501              132     ANL A, 00000001b
+015E 60FA              133     JZ closeDoorsSecondFloor ; when doors are not closed, wait till they are
+0160 020172            134     JMP initTimer0
                        135     checkThirdFloorDoors:
-                       136     MOV A, P0
-                       137     ANL A, 00100100b
-                       138     JZ initTimer0
+0163 E580              136     MOV A, P0
+0165 5524              137     ANL A, 00100100b
+0167 6009              138     JZ initTimer0
                        139     closeDoorsThirdFloor:
-                       140     MOV A, P2
-                       141     ANL A, 00000001b
-                       142     JZ closeDoorsThirdFloor ; when doors are not closed, wait till they are
-                       143     JMP initTimer0
+0169 E5A0              140     MOV A, P2
+016B 5501              141     ANL A, 00000001b
+016D 60FA              142     JZ closeDoorsThirdFloor ; when doors are not closed, wait till they are
+016F 020172            143     JMP initTimer0
                        144     ; in the end, Timer 0 has to be reinitialized
                        145     initTimer0:
-                       146     MOV TL0, 0F9h ; 249 in Low von Timer0
-                       147     MOV TH0, 09h ; 9 in High von Timer0
-                       148     RET
+0172 85F98A            146     MOV TL0, 0F9h ; 249 in Low von Timer0
+0175 85098C            147     MOV TH0, 09h ; 9 in High von Timer0
+0178 22                148     RET
                        149
                        150
                        151     ;check if button is pressed
                        152     timer1_ISR:
-                       153     MOV A, P0
-                       154     ANL A, 00001001b ; If P0.0 or P0.3 is pressed, then Accu != 0
-                       155     JZ checkSecondFloorButton ; And if Accu = 0, then check other floor
-                       156     MOV R0, 01h
+0179 E580              153     MOV A, P0
+017B 5509              154     ANL A, 00001001b ; If P0.0 or P0.3 is pressed, then Accu != 0
+017D 6002              155     JZ checkSecondFloorButton ; And if Accu = 0, then check other floor
+017F A801              156     MOV R0, 01h
                        157     checkSecondFloorButton:
-                       158     MOV A, P0
-                       159     ANL A, 00010010b ; If P0.1 or P0.4 is pressed, then Accu != 0
-                       160     JZ checkThirdFloorButton ; And if Accu = 0, then check other floor
-                       161     MOV R1, 01h
+0181 E580              158     MOV A, P0
+0183 5512              159     ANL A, 00010010b ; If P0.1 or P0.4 is pressed, then Accu != 0
+0185 6002              160     JZ checkThirdFloorButton ; And if Accu = 0, then check other floor
+0187 A901              161     MOV R1, 01h
                        162     checkThirdFloorButton:
-                       163     MOV A, P0
-                       164     ANL A, 00100100b ; If P0.2 or P0.5 is pressed, then Accu != 0
-                       165     JZ initTimer1 ; And if Accu = 0, then check other floor
-                       166     MOV R2, 01h
+0189 E580              163     MOV A, P0
+018B 5524              164     ANL A, 00100100b ; If P0.2 or P0.5 is pressed, then Accu != 0
+018D 6002              165     JZ initTimer1 ; And if Accu = 0, then check other floor
+018F AA01              166     MOV R2, 01h
                        167     initTimer1:
                        168     ; in the end, Timer 1 has to be reinitialized
-                       169     MOV TL1, 0F9h ; 249 in Low von Timer1
-                       170     MOV TH1, 013h ; 19 in High von Timer1
-                       171     RET
+0191 85F98B            169     MOV TL1, 0F9h ; 249 in Low von Timer1
+0194 85138D            170     MOV TH1, 013h ; 19 in High von Timer1
+0197 22                171     RET
                        172
                        173
                        174     ;check in which floor the elevator is
                        175     initialCheckFloor:
-                       176     JB P2.5, endInit
-                       177     JB P2.6, endInit
-                       178     JB P2.7, endInit
+0198 20A515            176     JB P2.5, endInit
+019B 20A612            177     JB P2.6, endInit
+019E 20A70F            178     JB P2.7, endInit
                        179     ; when we don’t know in which floor the elevator is, we wait for a button to be pressed
                        180     ; when a button is pressed we close the door and drive to the firstFloor
                        181     waitForButton:
                        182     ; check if a button is pressed
-                       183     MOV A, P0
-                       184     ANL A, 00111111b
-                       185     JZ waitForButton ;jumps if Accu equals 0
+01A1 E580              183     MOV A, P0
+01A3 553F              184     ANL A, 00111111b
+01A5 60FA              185     JZ waitForButton ;jumps if Accu equals 0
                        186
                        187     ; dont check if closed or so, just to it
-                       188     LCALL closeDoors
-                       189     LCALL driveDown
-                       190     LCALL openDoors
+01A7 120212            188     LCALL closeDoors
+01AA 1201BB            189     LCALL driveDown
+01AD 1201B1            190     LCALL openDoors
                        191     endInit:
-                       192     RET
+01B0 22                192     RET
                        193
                        194
                        195     ;openDoor Routine
                        196     openDoors:
-                       197     CLR P1.1
-                       198     SETB P1.0
-                       199     JNB P2.0, openDoors
-                       200     CLR P1.0
-                       201     RET
+01B1 C291              197     CLR P1.1
+01B3 D290              198     SETB P1.0
+01B5 30A0F9            199     JNB P2.0, openDoors
+01B8 C290              200     CLR P1.0
+01BA 22                201     RET
                        202
                        203
                        204     ;drive Down, till in first Floor
                        205     driveDown:
-                       206     SETB P1.3
-                       207     JNB P2.4, driveDown
-                       208     CLR P1.3
-                       209     RET
+01BB D293              206     SETB P1.3
+01BD 30A4FB            207     JNB P2.4, driveDown
+01C0 C293              208     CLR P1.3
+01C2 22                209     RET
                        210
                        211
-                       212     ; checks in which floor the Elevator is
-                       213     checkFloor:
-                       214     JB P2.5, firstFloor
-****ERROR:Symbolnotdefined:firstfloor
-                       215     JB P2.6, secondFloor
-****ERROR:Symbolnotdefined:secondfloor
-                       216     JB P2.7, thirdFloor
-****ERROR:Symbolnotdefined:thirdfloor
-                       217     JMP checkFloor
-                       218
-                       219
-                       220     floorLogic:
-                       221     ; implement floorLogic
-                       222     CALL openDoors
-                       223     ; here could be a timer
-                       224     CALL closeDoors
-                       225     ; Check if we are on top or at the bottom. If we are at the button, first try getting up.
-                       226     CJNE R0, #00h, goingUp
-                       227     CJNE R2, #00h, goingDown
-                       228     CJNE R7, #00h, goingDown
-                       229     JMP goingUp
-                       230
-                       231
-                       232     ; Routine to Travel to FirstFloor
-                       233     goToFirstFloor:
-                       234     CLR P1.2
-                       235     SETB P1.3
-                       236     JNB P2.4, goToFirstFloor
-                       237     CLR P1.3
-                       238     LCALL showFirstFloor
-                       239     JMP floorLogic
-                       240
-                       241     ; Routine to Travel to SecondFloor
-                       242     goToSecondFloor:
-                       243     JB P0.4, firstFloorToSecondFloor
-                       244     JB P2.6, thirdFloorToSecondFloor
-                       245     ; Elevator has to be in one Floor
-                       246     firstFloorToSecondFloor:
-                       247     CLR P1.3
-                       248     SETB P1.2
-                       249     JNB P2.5, goToFirstFloor
-                       250     CLR P1.2
-                       251     LCALL showSecondFloor
-                       252     JMP floorLogic
-                       253     thirdFloorToSecondFloor:
-                       254     CLR P1.2
-                       255     SETB P1.3
-                       256     JNB P2.5, goToFirstFloor
-                       257     CLR P1.3
-                       258     LCALL showSecondFloor
-                       259     JMP secondFloor
-****ERROR:Symbolnotdefined:secondfloor
-                       260
-                       261
-                       262     ; Routine to Travel to ThirdFloor
-                       263     goToThirdFloor:
-                       264     CLR P1.3
-                       265     SETB P1.2
-                       266     JNB P2.6, goToFirstFloor
-                       267     CLR P1.2
-                       268     LCALL showThirdFloor
-                       269     JMP thirdFloor
-****ERROR:Symbolnotdefined:thirdfloor
-                       270
-                       271
-                       272     ; Routine to Close the Doors
-                       273     closeDoors:
-                       274     JB P2.1, dooresClosed
-                       275     MOV A, IE
-                       276     ORL A, 00000010b
-                       277     MOV IE, A ; Activate interrupt to Check DoorSensors
-                       278     CLR P1.0
-                       279     SETB P1.1
-                       280     JNB P2.1, closeDoores ; If Doores Are Closed STOP InterruptTimer and Return
-****ERROR:Symbolnotdefined:closedoores
-                       281     dooresClosed:
-                       282     MOV A, IE
-                       283     ANL A, 11111101b
-                       284     MOV IE, A ; Activate interrupt to Check DoorSensors
-                       285     RET
-                       286
-                       287
-                       288     goingDown:
-                       289     MOV R7, 01h
-                       290     MOV A,R1
-                       291     JNZ goToSecondFloor
-                       292     MOV A, R0
-                       293     JNZ goToFirstFloor
-                       294     ; if no button is pressed, check if button is pressed to drive up
-                       295     JMP goingUP
-                       296
-                       297
-                       298     goingUp:
-                       299     MOV R7, 00h
-                       300     MOV A,R1
-                       301     JNZ goToSecondFloor
-                       302     MOV A, R2
-                       303     JNZ goToThirdFloor
-                       304     ; if no button is pressed, check if button is pressed to drive down
-                       305     JMP goingDown
-                       306
-                       307
-                       308     showFirstFloor:
-                       309     MOV P3, 11111001b ;Activate LED´s for first Floor
-                       310     RET
-                       311
-                       312
-                       313     showSecondFloor:
-                       314     MOV P3, 10100100b ;Activate LED´s for second Floor
-                       315     RET
-                       316
-                       317
-                       318     showThirdFloor:
-                       319     MOV P3, 10110000b ;Activate LED´s for third Floor
-                       320     RET
-                       321
-                       322
-                       323     END
-ASSEMBLY COMPLETE, NO ERRORS FOUND, 7 WARNINGS
+                       212     floorLogic:
+                       213     ; implement floorLogic
+01C3 31B1              214     CALL openDoors
+                       215     ; here could be a timer
+01C5 120212            216     CALL closeDoors
+                       217     ; Check if we are on top or at the bottom. If we are at the button, first try getting up.
+01C8 B80069            218     CJNE R0, #00h, goingUp
+01CB BA005B            219     CJNE R2, #00h, goingDown
+01CE BF0058            220     CJNE R7, #00h, goingDown
+01D1 020234            221     JMP goingUp
+                       222
+                       223
+                       224     ; Routine to Travel to FirstFloor
+                       225     goToFirstFloor:
+01D4 C292              226     CLR P1.2
+01D6 D293              227     SETB P1.3
+01D8 30A4F9            228     JNB P2.4, goToFirstFloor
+01DB C293              229     CLR P1.3
+01DD 12023E            230     LCALL showFirstFloor
+01E0 80E1              231     JMP floorLogic
+                       232
+                       233     ; Routine to Travel to SecondFloor
+                       234     goToSecondFloor:
+01E2 208403            235     JB P0.4, firstFloorToSecondFloor
+01E5 20A60E            236     JB P2.6, thirdFloorToSecondFloor
+                       237     ; Elevator has to be in one Floor
+                       238     firstFloorToSecondFloor:
+01E8 C293              239     CLR P1.3
+01EA D292              240     SETB P1.2
+01EC 30A5E5            241     JNB P2.5, goToFirstFloor
+01EF C292              242     CLR P1.2
+01F1 120242            243     LCALL showSecondFloor
+01F4 80CD              244     JMP floorLogic
+                       245     thirdFloorToSecondFloor:
+01F6 C292              246     CLR P1.2
+01F8 D293              247     SETB P1.3
+01FA 30A5D7            248     JNB P2.5, goToFirstFloor
+01FD C293              249     CLR P1.3
+01FF 120242            250     LCALL showSecondFloor
+0202 80BF              251     JMP floorLogic
+                       252
+                       253
+                       254     ; Routine to Travel to ThirdFloor
+                       255     goToThirdFloor:
+0204 C293              256     CLR P1.3
+0206 D292              257     SETB P1.2
+0208 30A6C9            258     JNB P2.6, goToFirstFloor
+020B C292              259     CLR P1.2
+020D 120246            260     LCALL showThirdFloor
+0210 80B1              261     JMP floorLogic
+                       262
+                       263
+                       264     ; Routine to Close the Doors
+                       265     closeDoors:
+0212 20A10D            266     JB P2.1, dooresClosed
+0215 E5A8              267     MOV A, IE
+0217 4502              268     ORL A, 00000010b
+0219 F5A8              269     MOV IE, A ; Activate interrupt to Check DoorSensors
+021B C290              270     CLR P1.0
+021D D291              271     SETB P1.1
+021F 30A1F0            272     JNB P2.1, closeDoors ; If Doores Are Closed STOP InterruptTimer and Return
+                       273     dooresClosed:
+0222 E5A8              274     MOV A, IE
+0224 55FD              275     ANL A, 11111101b
+0226 F5A8              276     MOV IE, A ; Activate interrupt to Check DoorSensors
+0228 22                277     RET
+                       278
+                       279
+                       280     goingDown:
+0229 AF01              281     MOV R7, 01h
+022B E9                282     MOV A,R1
+022C 70B4              283     JNZ goToSecondFloor
+022E E8                284     MOV A, R0
+022F 70A3              285     JNZ goToFirstFloor
+                       286     ; if no button is pressed, check if button is pressed to drive up
+0231 020234            287     JMP goingUP
+                       288
+                       289
+                       290     goingUp:
+0234 AF00              291     MOV R7, 00h
+0236 E9                292     MOV A,R1
+0237 70A9              293     JNZ goToSecondFloor
+0239 EA                294     MOV A, R2
+023A 70C8              295     JNZ goToThirdFloor
+                       296     ; if no button is pressed, check if button is pressed to drive down
+023C 80EB              297     JMP goingDown
+                       298
+                       299
+                       300     showFirstFloor:
+023E 85F9B0            301     MOV P3, 11111001b ;Activate LED´s for first Floor
+0241 22                302     RET
+                       303
+                       304
+                       305     showSecondFloor:
+0242 85A4B0            306     MOV P3, 10100100b ;Activate LED´s for second Floor
+0245 22                307     RET
+                       308
+                       309
+                       310     showThirdFloor:
+0246 85B0B0            311     MOV P3, 10110000b ;Activate LED´s for third Floor
+0249 22                312     RET
+                       313
+                       314
+                       315     END
+ASSEMBLY COMPLETE, NO ERRORS FOUND, NO WARNINGS
 
-
-ERROR SUMMARY:
-Line 110, ERROR:Labelistoofarfor8-bitrelativeaddressing.Trytodisablepeepholeoptimizationsiftheyareon.
-Line 215, ERROR:Symbolnotdefined:firstfloor
-Line 217, ERROR:Symbolnotdefined:secondfloor
-Line 219, ERROR:Symbolnotdefined:thirdfloor
-Line 263, ERROR:Symbolnotdefined:secondfloor
-Line 274, ERROR:Symbolnotdefined:thirdfloor
-Line 286, ERROR:Symbolnotdefined:closedoores
 
 SYMBOL TABLE:
 ??MCU_8051_IDE . . . . . . . . . . .  N  NUMB  8051H  NOT USED
@@ -386,7 +362,6 @@ CFINT. . . . . . . . . . . . . . . .  C  ADDR  0033H  NOT USED
 CH . . . . . . . . . . . . . . . . .  D  ADDR  00F9H  NOT USED
 CHECKDOORBUTTONS . . . . . . . . . .  C  ADDR  013CH
 CHECKFIRSTFLOORDOORS . . . . . . . .  C  ADDR  0145H
-CHECKFLOOR . . . . . . . . . . . . .  C  ADDR  01C3H
 CHECKSECONDFLOORBUTTON . . . . . . .  C  ADDR  0181H
 CHECKSECONDFLOORDOORS. . . . . . . .  C  ADDR  0154H
 CHECKTHIRDFLOORBUTTON. . . . . . . .  C  ADDR  0189H
@@ -397,7 +372,7 @@ CKRL . . . . . . . . . . . . . . . .  D  ADDR  0097H  NOT USED
 CKSEL. . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
 CL . . . . . . . . . . . . . . . . .  D  ADDR  00E9H  NOT USED
 CLKREG . . . . . . . . . . . . . . .  D  ADDR  008FH  NOT USED
-CLOSEDOORS . . . . . . . . . . . . .  C  ADDR  021FH
+CLOSEDOORS . . . . . . . . . . . . .  C  ADDR  0212H
 CLOSEDOORSFIRSTFLOOR . . . . . . . .  C  ADDR  014BH
 CLOSEDOORSSECONDFLOOR. . . . . . . .  C  ADDR  015AH
 CLOSEDOORSTHIRDFLOOR . . . . . . . .  C  ADDR  0169H
@@ -406,7 +381,7 @@ CPRL2. . . . . . . . . . . . . . . .  B  ADDR  00C8H  NOT USED
 CR . . . . . . . . . . . . . . . . .  B  ADDR  00DEH  NOT USED
 CT2. . . . . . . . . . . . . . . . .  B  ADDR  00C9H  NOT USED
 CY . . . . . . . . . . . . . . . . .  B  ADDR  00D7H  NOT USED
-DOORESCLOSED . . . . . . . . . . . .  C  ADDR  022FH
+DOORESCLOSED . . . . . . . . . . . .  C  ADDR  0222H
 DP0H . . . . . . . . . . . . . . . .  D  ADDR  0083H  NOT USED
 DP0L . . . . . . . . . . . . . . . .  D  ADDR  0082H  NOT USED
 DP1H . . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
@@ -431,13 +406,13 @@ EXTI0. . . . . . . . . . . . . . . .  C  ADDR  0003H  NOT USED
 EXTI1. . . . . . . . . . . . . . . .  C  ADDR  0013H  NOT USED
 F0 . . . . . . . . . . . . . . . . .  B  ADDR  00D5H  NOT USED
 FE . . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
-FIRSTFLOORTOSECONDFLOOR. . . . . . .  C  ADDR  01F3H
-FLOORLOGIC . . . . . . . . . . . . .  C  ADDR  01CEH
-GOINGDOWN. . . . . . . . . . . . . .  C  ADDR  0236H
-GOINGUP. . . . . . . . . . . . . . .  C  ADDR  0241H
-GOTOFIRSTFLOOR . . . . . . . . . . .  C  ADDR  01DFH
-GOTOSECONDFLOOR. . . . . . . . . . .  C  ADDR  01EDH
-GOTOTHIRDFLOOR . . . . . . . . . . .  C  ADDR  0210H
+FIRSTFLOORTOSECONDFLOOR. . . . . . .  C  ADDR  01E8H
+FLOORLOGIC . . . . . . . . . . . . .  C  ADDR  01C3H
+GOINGDOWN. . . . . . . . . . . . . .  C  ADDR  0229H
+GOINGUP. . . . . . . . . . . . . . .  C  ADDR  0234H
+GOTOFIRSTFLOOR . . . . . . . . . . .  C  ADDR  01D4H
+GOTOSECONDFLOOR. . . . . . . . . . .  C  ADDR  01E2H
+GOTOTHIRDFLOOR . . . . . . . . . . .  C  ADDR  0204H
 IE . . . . . . . . . . . . . . . . .  D  ADDR  00A8H
 IE0. . . . . . . . . . . . . . . . .  B  ADDR  0089H  NOT USED
 IE1. . . . . . . . . . . . . . . . .  B  ADDR  008BH  NOT USED
@@ -510,9 +485,9 @@ SADEN_0. . . . . . . . . . . . . . .  D  ADDR  00B9H  NOT USED
 SADEN_1. . . . . . . . . . . . . . .  D  ADDR  00BAH  NOT USED
 SBUF . . . . . . . . . . . . . . . .  D  ADDR  0099H  NOT USED
 SCON . . . . . . . . . . . . . . . .  D  ADDR  0098H  NOT USED
-SHOWFIRSTFLOOR . . . . . . . . . . .  C  ADDR  024BH
-SHOWSECONDFLOOR. . . . . . . . . . .  C  ADDR  024FH
-SHOWTHIRDFLOOR . . . . . . . . . . .  C  ADDR  0253H
+SHOWFIRSTFLOOR . . . . . . . . . . .  C  ADDR  023EH
+SHOWSECONDFLOOR. . . . . . . . . . .  C  ADDR  0242H
+SHOWTHIRDFLOOR . . . . . . . . . . .  C  ADDR  0246H
 SINT . . . . . . . . . . . . . . . .  C  ADDR  0023H  NOT USED
 SM0. . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
 SM1. . . . . . . . . . . . . . . . .  B  ADDR  009EH  NOT USED
@@ -537,9 +512,9 @@ TF2. . . . . . . . . . . . . . . . .  B  ADDR  00CFH  NOT USED
 TH0. . . . . . . . . . . . . . . . .  D  ADDR  008CH
 TH1. . . . . . . . . . . . . . . . .  D  ADDR  008DH
 TH2. . . . . . . . . . . . . . . . .  D  ADDR  00CDH  NOT USED
-THIRDFLOORTOSECONDFLOOR. . . . . . .  C  ADDR  0201H
+THIRDFLOORTOSECONDFLOOR. . . . . . .  C  ADDR  01F6H
 TI . . . . . . . . . . . . . . . . .  B  ADDR  0099H  NOT USED
-TIMER0 . . . . . . . . . . . . . . .  C  ADDR  000BH
+TIMER0 . . . . . . . . . . . . . . .  C  ADDR  000BH  NOT USED
 TIMER0_ISR . . . . . . . . . . . . .  C  ADDR  012CH
 TIMER1 . . . . . . . . . . . . . . .  C  ADDR  001BH  NOT USED
 TIMER1_ISR . . . . . . . . . . . . .  C  ADDR  0179H

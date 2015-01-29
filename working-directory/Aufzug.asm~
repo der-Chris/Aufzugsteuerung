@@ -88,7 +88,7 @@ MOV R1, 00h ; R1 = 1, if Button for Second Floor has been pressed
 MOV R2, 00h ; R2 = 1, if Button for Third Floor has been pressed
 
 LCALL initialCheckFloor
-JMP checkFloor
+JMP goingDown
 
 
 
@@ -107,7 +107,7 @@ CLR P1.0
 SETB P1.1 ; stop doors from closing, open doors
 MOV A, P2
 ANL A, 00000001b
-JZ timer0 ; when doors are not closed, wait till they are
+JZ timer0_ISR ; when doors are not closed, wait till they are
 ; If sensors are not triggered, check if a button from floor the elevator is in, is pressed
 checkDoorButtons:
 JB P2.4, checkFirstFloorDoors
@@ -209,14 +209,6 @@ CLR P1.3
 RET
 
 
-; checks in which floor the Elevator is
-checkFloor:
-JB P2.5, firstFloor
-JB P2.6, secondFloor
-JB P2.7, thirdFloor
-JMP checkFloor
-
-
 floorLogic:
 ; implement floorLogic
 CALL openDoors
@@ -256,7 +248,7 @@ SETB P1.3
 JNB P2.5, goToFirstFloor
 CLR P1.3
 LCALL showSecondFloor
-JMP secondFloor
+JMP floorLogic
 
 
 ; Routine to Travel to ThirdFloor
@@ -266,7 +258,7 @@ SETB P1.2
 JNB P2.6, goToFirstFloor
 CLR P1.2
 LCALL showThirdFloor
-JMP thirdFloor
+JMP floorLogic
 
 
 ; Routine to Close the Doors
@@ -277,7 +269,7 @@ ORL A, 00000010b
 MOV IE, A ; Activate interrupt to Check DoorSensors 
 CLR P1.0
 SETB P1.1
-JNB P2.1, closeDoores ; If Doores Are Closed STOP InterruptTimer and Return
+JNB P2.1, closeDoors ; If Doores Are Closed STOP InterruptTimer and Return
 dooresClosed:
 MOV A, IE
 ANL A, 11111101b
