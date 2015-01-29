@@ -62,31 +62,31 @@ Aufzug                                                                          
                         61     CSEG AT 0100H
                         62     ;initialize interrupts
                         63     init_interrupts:
-0100 851189             64     MOV TMOD, 00010001b
+0100 758911             64     MOV TMOD, #00010001b
                         65     ;Timer1: Gate1=0, C/T1 = 0, Mode1 = 01 ; Timer0: Gate0=0, C/T0 = 0, Mode0 = 01
-0103 855088             66     MOV TCON, 01010000b
+0103 758850             66     MOV TCON, #01010000b
                         67     ; Timer1: TF1=0, TR1(enables Timer1)=1; Timer0: TF0=0, TR0(enables Timer0)=1
                         68
                         69     ; EA(global Interrupt Enabled) = 1, X = dont care, X = dont care, ES(enables serial interrupt)=0,
                         70     ; ET1(enables timer interrupt1)=1, EX1(enables External Interrupt1)=0,ET0(enables timer interrupt0)=0
                         71     ; Enable Timer0 Interrupts just if it is needed
-0106 8589A8             72     MOV IE, 10001001b
+0106 75A889             72     MOV IE, #10001001b
                         73     ; interrupt Priority is correct
-0109 85F98A             74     MOV TL0, 0F9h ; 249 in Low von Timer0
-010C 85098C             75     MOV TH0, 09h ; 9 in High von Timer0
-010F 85F98B             76     MOV TL1, 0F9h ; 249 in Low von Timer1
-0112 85038D             77     MOV TH1, 03h ; 19 in High von Timer1
+0109 758AF9             74     MOV TL0, #0F9h ; 249 in Low von Timer0
+010C 758C09             75     MOV TH0, #09h ; 9 in High von Timer0
+010F 758BF9             76     MOV TL1, #0F9h ; 249 in Low von Timer1
+0112 758D03             77     MOV TH1, #03h ; 19 in High von Timer1
 0115 22                 78     RET
                         79
                         80
                         81     ;initializes the parameters
                         82     init:
-0116 850090             83     MOV P1, 00h ; turn off Engines -> Engines are low active
-0119 85FFB0             84     MOV P3, 0ffh ; MOV P3, #0ffh ;turn off Display -> Display is low active
+0116 759000             83     MOV P1, #00h ; turn off Engines -> Engines are low active
+0119 75B0FF             84     MOV P3, #0ffh ; MOV P3, #0ffh ;turn off Display -> Display is low active
                         85
-011C A800               86     MOV R0, 00h ; R0 = 1, if Button for First Floor has been pressed
-011E A900               87     MOV R1, 00h ; R1 = 1, if Button for Second Floor has been pressed
-0120 AA00               88     MOV R2, 00h ; R2 = 1, if Button for Third Floor has been pressed
+011C 7800               86     MOV R0, #00h ; R0 = 1, if Button for First Floor has been pressed
+011E 7900               87     MOV R1, #00h ; R1 = 1, if Button for Second Floor has been pressed
+0120 7A00               88     MOV R2, #00h ; R2 = 1, if Button for Third Floor has been pressed
                         89
 0122 120198             90     LCALL initialCheckFloor
 0125 020229             91     JMP goingDown
@@ -102,12 +102,12 @@ Aufzug                                                                          
                        101     ; Check sensors, if sensors are triggered Or OpenDoor or SameFloor Buttons are pressed,open the doors
                        102     timer0_ISR:
 012C E5B0              103     MOV A, P3
-012E 550C              104     ANL A, 00001100b ; If P3.2 or P3.3 is triggered, then Accu != 0
+012E 540C              104     ANL A, #00001100b ; If P3.2 or P3.3 is triggered, then Accu != 0
 0130 600A              105     JZ checkDoorButtons ; And if Accu = 0, countinue
 0132 C290              106     CLR P1.0
 0134 D291              107     SETB P1.1 ; stop doors from closing, open doors
 0136 E5A0              108     MOV A, P2
-0138 5501              109     ANL A, 00000001b
+0138 5401              109     ANL A, #00000001b
 013A 60F0              110     JZ timer0_ISR ; when doors are not closed, wait till they are
                        111     ; If sensors are not triggered, check if a button from floor the elevator is in, is pressed
                        112     checkDoorButtons:
@@ -117,58 +117,58 @@ Aufzug                                                                          
                        116     ; Elevator has to be in one Floor
                        117     checkFirstFloorDoors:
 0145 E580              118     MOV A, P0
-0147 5509              119     ANL A, 00001001b
+0147 5409              119     ANL A, #00001001b
 0149 6027              120     JZ initTimer0
                        121     closeDoorsFirstFloor:
 014B E5A0              122     MOV A, P2
-014D 5501              123     ANL A, 00000001b
+014D 5401              123     ANL A, #00000001b
 014F 60FA              124     JZ closeDoorsFirstFloor ; when doors are not closed, wait till they are
 0151 020172            125     JMP initTimer0
                        126     checkSecondFloorDoors:
 0154 E580              127     MOV A, P0
-0156 5512              128     ANL A, 00010010b
+0156 5412              128     ANL A, #00010010b
 0158 6018              129     JZ initTimer0
                        130     closeDoorsSecondFloor:
 015A E5A0              131     MOV A, P2
-015C 5501              132     ANL A, 00000001b
+015C 5401              132     ANL A, #00000001b
 015E 60FA              133     JZ closeDoorsSecondFloor ; when doors are not closed, wait till they are
 0160 020172            134     JMP initTimer0
                        135     checkThirdFloorDoors:
 0163 E580              136     MOV A, P0
-0165 5524              137     ANL A, 00100100b
+0165 5424              137     ANL A, #00100100b
 0167 6009              138     JZ initTimer0
                        139     closeDoorsThirdFloor:
 0169 E5A0              140     MOV A, P2
-016B 5501              141     ANL A, 00000001b
+016B 5401              141     ANL A, #00000001b
 016D 60FA              142     JZ closeDoorsThirdFloor ; when doors are not closed, wait till they are
 016F 020172            143     JMP initTimer0
                        144     ; in the end, Timer 0 has to be reinitialized
                        145     initTimer0:
-0172 85F98A            146     MOV TL0, 0F9h ; 249 in Low von Timer0
-0175 85098C            147     MOV TH0, 09h ; 9 in High von Timer0
+0172 758AF9            146     MOV TL0, #0F9h ; 249 in Low von Timer0
+0175 758C09            147     MOV TH0, #09h ; 9 in High von Timer0
 0178 22                148     RET
                        149
                        150
                        151     ;check if button is pressed
                        152     timer1_ISR:
 0179 E580              153     MOV A, P0
-017B 5509              154     ANL A, 00001001b ; If P0.0 or P0.3 is pressed, then Accu != 0
+017B 5409              154     ANL A, #00001001b ; If P0.0 or P0.3 is pressed, then Accu != 0
 017D 6002              155     JZ checkSecondFloorButton ; And if Accu = 0, then check other floor
-017F A801              156     MOV R0, 01h
+017F 7801              156     MOV R0, #01h
                        157     checkSecondFloorButton:
 0181 E580              158     MOV A, P0
-0183 5512              159     ANL A, 00010010b ; If P0.1 or P0.4 is pressed, then Accu != 0
+0183 5412              159     ANL A, #00010010b ; If P0.1 or P0.4 is pressed, then Accu != 0
 0185 6002              160     JZ checkThirdFloorButton ; And if Accu = 0, then check other floor
-0187 A901              161     MOV R1, 01h
+0187 7901              161     MOV R1, #01h
                        162     checkThirdFloorButton:
 0189 E580              163     MOV A, P0
-018B 5524              164     ANL A, 00100100b ; If P0.2 or P0.5 is pressed, then Accu != 0
+018B 5424              164     ANL A, #00100100b ; If P0.2 or P0.5 is pressed, then Accu != 0
 018D 6002              165     JZ initTimer1 ; And if Accu = 0, then check other floor
-018F AA01              166     MOV R2, 01h
+018F 7A01              166     MOV R2, #01h
                        167     initTimer1:
                        168     ; in the end, Timer 1 has to be reinitialized
-0191 85F98B            169     MOV TL1, 0F9h ; 249 in Low von Timer1
-0194 85138D            170     MOV TH1, 013h ; 19 in High von Timer1
+0191 758BF9            169     MOV TL1, #0F9h ; 249 in Low von Timer1
+0194 758D13            170     MOV TH1, #013h ; 19 in High von Timer1
 0197 22                171     RET
                        172
                        173
@@ -182,7 +182,7 @@ Aufzug                                                                          
                        181     waitForButton:
                        182     ; check if a button is pressed
 01A1 E580              183     MOV A, P0
-01A3 553F              184     ANL A, 00111111b
+01A3 543F              184     ANL A, #00111111b
 01A5 60FA              185     JZ waitForButton ;jumps if Accu equals 0
                        186
                        187     ; dont check if closed or so, just to it
@@ -266,20 +266,20 @@ Aufzug                                                                          
                        265     closeDoors:
 0212 20A10D            266     JB P2.1, dooresClosed
 0215 E5A8              267     MOV A, IE
-0217 4502              268     ORL A, 00000010b
+0217 4402              268     ORL A, #00000010b
 0219 F5A8              269     MOV IE, A ; Activate interrupt to Check DoorSensors
 021B C290              270     CLR P1.0
 021D D291              271     SETB P1.1
 021F 30A1F0            272     JNB P2.1, closeDoors ; If Doores Are Closed STOP InterruptTimer and Return
                        273     dooresClosed:
 0222 E5A8              274     MOV A, IE
-0224 55FD              275     ANL A, 11111101b
+0224 54FD              275     ANL A, #11111101b
 0226 F5A8              276     MOV IE, A ; Activate interrupt to Check DoorSensors
 0228 22                277     RET
                        278
                        279
                        280     goingDown:
-0229 AF01              281     MOV R7, 01h
+0229 7F01              281     MOV R7, #01h
 022B E9                282     MOV A,R1
 022C 70B4              283     JNZ goToSecondFloor
 022E E8                284     MOV A, R0
@@ -289,7 +289,7 @@ Aufzug                                                                          
                        288
                        289
                        290     goingUp:
-0234 AF00              291     MOV R7, 00h
+0234 7F00              291     MOV R7, #00h
 0236 E9                292     MOV A,R1
 0237 70A9              293     JNZ goToSecondFloor
 0239 EA                294     MOV A, R2
@@ -299,17 +299,17 @@ Aufzug                                                                          
                        298
                        299
                        300     showFirstFloor:
-023E 85F9B0            301     MOV P3, 11111001b ;Activate LED´s for first Floor
+023E 75B0F9            301     MOV P3, #11111001b ;Activate LED´s for first Floor
 0241 22                302     RET
                        303
                        304
                        305     showSecondFloor:
-0242 85A4B0            306     MOV P3, 10100100b ;Activate LED´s for second Floor
+0242 75B0A4            306     MOV P3, #10100100b ;Activate LED´s for second Floor
 0245 22                307     RET
                        308
                        309
                        310     showThirdFloor:
-0246 85B0B0            311     MOV P3, 10110000b ;Activate LED´s for third Floor
+0246 75B0B0            311     MOV P3, #10110000b ;Activate LED´s for third Floor
 0249 22                312     RET
                        313
                        314
