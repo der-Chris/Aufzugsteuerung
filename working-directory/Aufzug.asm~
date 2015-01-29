@@ -48,21 +48,23 @@ RETI
 ; Interrupt Address for Timer0
 ; This Interrupt checks every 5ms if the Sensors are triggered
 ORG 0bh
-LCALL timer0
+LCALL timer0_ISR
 RETI
 
 
 ; Interrupt Address for Timer1
 ; This Interrupt checks every 10ms if a Button has been pressed
 ORG 01bh
-LCALL timer1 ; try LCALL. If error use CALL instead
+LCALL timer1_ISR
 RETI
 
 CSEG AT 0100H
 ;initialize interrupts
 init_interrupts:
-MOV TMOD, 00010001b ;Timer1: Gate1=0, C/T1 = 0, Mode1 = 01; Timer0: Gate0=0, C/T0 = 0, Mode0 = 01;
-MOV TCON, 01010000b ; Timer1: TF1=0, TR1(enables Timer1)=1; Timer0: TF0=0, TR0(enables Timer0)=1;
+MOV TMOD, 00010001b 
+;Timer1: Gate1=0, C/T1 = 0, Mode1 = 01 ; Timer0: Gate0=0, C/T0 = 0, Mode0 = 01
+MOV TCON, 01010000b 
+; Timer1: TF1=0, TR1(enables Timer1)=1; Timer0: TF0=0, TR0(enables Timer0)=1
 
 ; EA(global Interrupt Enabled) = 1, X = dont care, X = dont care, ES(enables serial interrupt)=0, 
 ; ET1(enables timer interrupt1)=1, EX1(enables External Interrupt1)=0,ET0(enables timer interrupt0)=0, EX0(enables External Interrupt0)=1,
@@ -97,7 +99,7 @@ RET
 
 
 ; Check sensors, if sensors are triggered Or OpenDoor or SameFloor Buttons are pressed,open the doors
-timer0:
+timer0_ISR:
 MOV A, P3
 ANL A, 00001100b ; If P3.2 or P3.3 is triggered, then Accu != 0
 JZ checkDoorButtons ; And if Accu = 0, countinue
@@ -147,7 +149,7 @@ RET
 
 
 ;check if button is pressed
-timer1:
+timer1_ISR:
 MOV A, P0
 ANL A, 00001001b ; If P0.0 or P0.3 is pressed, then Accu != 0
 JZ checkSecondFloorButton ; And if Accu = 0, then check other floor
@@ -303,7 +305,7 @@ JNZ goToThirdFloor
 JMP goingDown
 
 
-howFirstFloor:
+showFirstFloor:
 MOV P3, 11111001b ;Activate LED´s for first Floor
 RET
 
