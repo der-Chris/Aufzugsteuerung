@@ -58,7 +58,7 @@ ORG 01bh
 LCALL timer1_ISR
 RETI
 
-CSEG AT 0100H
+CSEG AT 030H
 ;initialize interrupts
 init_interrupts:
 MOV TMOD, #00010001b 
@@ -79,7 +79,9 @@ MOV TH1, #03h ; 19 in High von Timer1
 
 ;initializes the parameters
 init:
+MOV P0, #0ffh ; initiate all the Buttons, if they are pressed they are 0
 MOV P1, #00h ; turn off Engines -> Engines are low active
+MOV P2, #0ffh ; initiate all the sensors. if they are triggered, they are 0
 MOV P3, #0ffh ; MOV P3, #0ffh ;turn off Display -> Display is low active
 
 MOV R0, #00h ; R0 = 1, if Button for First Floor has been pressed
@@ -153,16 +155,19 @@ MOV A, P0
 ANL A, #00001001b ; If P0.0 or P0.3 is pressed, then Accu != 0
 JZ checkSecondFloorButton ; And if Accu = 0, then check other floor
 MOV R0, #01h
+CLR P1.4 ; let the Light for Button in 1.Floor go on
 checkSecondFloorButton:
 MOV A, P0
 ANL A, #00010010b ; If P0.1 or P0.4 is pressed, then Accu != 0
 JZ checkThirdFloorButton ; And if Accu = 0, then check other floor
 MOV R1, #01h
+CLR P1.5 ; let the Light for Button in 2.Floor go on
 checkThirdFloorButton:
 MOV A, P0
 ANL A, #00100100b ; If P0.2 or P0.5 is pressed, then Accu != 0
 JZ initTimer1 ; And if Accu = 0, then check other floor
 MOV R2, #01h
+CLR P1.6 ; let the Light for Button in 3.Floor go on
 initTimer1:
 ; in the end, Timer 1 has to be reinitialized
 MOV TL1, #0F9h ; 249 in Low von Timer1
@@ -172,15 +177,15 @@ RET
 
 ;check in which floor the elevator is
 initialCheckFloor:
-JB P2.5, endInit
-JB P2.6, endInit
-JB P2.7, endInit
+JNB P2.5, endInit
+JNB P2.6, endInit
+JNB P2.7, endInit
 ; when we don’t know in which floor the elevator is, we wait for a button to be pressed
 ; when a button is pressed we close the door and drive to the firstFloor
 waitForButton:
 ; check if a button is pressed
 MOV A, P0
-ANL A, #00111111b 
+CPL A
 JZ waitForButton ;jumps if Accu equals 0
 
 ; dont check if closed or so, just to it
@@ -196,6 +201,8 @@ openDoors:
 CLR P1.1
 SETB P1.0
 JNB P2.0, openDoors
+SETB P1.7
+CLR P1.7 ; let the Gong ring short when the door is open
 CLR P1.0
 RET
 
@@ -298,16 +305,19 @@ JMP goingDown
 
 showFirstFloor:
 MOV P3, #11111001b ;Activate LED´s for first Floor
+SETB P1.4 ; If we are in first Floor, turn the Buttonlight off
 RET
 
 
 showSecondFloor:
 MOV P3, #10100100b ;Activate LED´s for second Floor
+SETB P1.5 ; If we are in second Floor, turn the Buttonlight off
 RET
 
 
 showThirdFloor:
 MOV P3, #10110000b ;Activate LED´s for third Floor
+SETB P1.6 ; If we are in third Floor, turn the Buttonlight off
 RET
 
 
