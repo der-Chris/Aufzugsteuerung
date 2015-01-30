@@ -8,7 +8,7 @@
 ;    4					1
 ;    5					2
 ;    6		
-;    7			Tür zu
+;    7	
 ;
 ; P1.0	Motor	Tür		Auf
 ;    1					Zu
@@ -212,6 +212,10 @@ driveDown:
 SETB P1.3
 JNB P2.4, driveDown
 CLR P1.3
+LCALL showfirstfloor
+SETB P1.4
+SETB P1.5
+SETB P1.6 ; be shure Button lights are off
 RET
 
 
