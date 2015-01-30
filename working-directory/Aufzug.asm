@@ -1,5 +1,8 @@
 ; Aufzugsteuerung mit 3 Stockwerken
 ;
+; Be shure to load the Presets for 2 Simple keypads
+; the 7-Seg-Display and the LED-Panel
+;
 ; Portbelegung:
 ; P0.0	Knöpfe 	Außen	0
 ;    1					1
